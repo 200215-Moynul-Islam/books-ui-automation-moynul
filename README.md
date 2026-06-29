@@ -6,7 +6,7 @@ A production-ready UI automation framework built with **Playwright** and **Pytes
 
 ## Project Overview
 
-This framework automates end-to-end UI testing for the Books to Scrape website. It covers homepage validation, book navigation, data consistency, broken link detection, and product image verification across paginated pages. The framework is designed following OOP, SOLID, and DRY principles with reusable fixtures, clean test structure, and comprehensive local reporting.
+This framework automates end-to-end UI testing for the Books to Scrape website. It covers homepage validation, book navigation, data consistency, broken link detection, and product image verification across paginated pages. The framework is designed following OOP, SOLID, and DRY principles with reusable fixtures, clean test structure, and CI/CD integration via GitHub Actions with Allure reports published to GitHub Pages.
 
 ---
 
@@ -19,22 +19,23 @@ This framework automates end-to-end UI testing for the Books to Scrape website. 
 - Product image attribute validation with pagination support
 - HTML report generation via `pytest-html`
 - Allure results generation via `allure-pytest`
+- GitHub Actions CI/CD pipeline with Allure report hosted on GitHub Pages
 - No hardcoded waits — relies on Playwright's built-in auto-waiting
 
 ---
 
 ## Tech Stack
 
-| Tool              | Version | Purpose                           |
-| ----------------- | ------- | --------------------------------- |
-| Python            | 3.12    | Runtime                           |
-| Playwright        | 1.60.0  | Browser automation                |
-| pytest            | 9.1.1   | Test framework                    |
-| pytest-playwright | 0.8.0   | Playwright-pytest integration     |
-| pytest-html       | 4.2.0   | HTML report generation            |
-| allure-pytest     | 2.16.0  | Allure results generation         |
-| pytest-base-url   | 2.1.0   | Base URL configuration            |
-| requests          | 2.34.2  | HTTP requests for link validation |
+| Tool | Version | Purpose |
+|---|---|---|
+| Python | 3.12 | Runtime |
+| Playwright | 1.60.0 | Browser automation |
+| pytest | 9.1.1 | Test framework |
+| pytest-playwright | 0.8.0 | Playwright-pytest integration |
+| pytest-html | 4.2.0 | HTML report generation |
+| allure-pytest | 2.16.0 | Allure results generation |
+| pytest-base-url | 2.1.0 | Base URL configuration |
+| requests | 2.34.2 | HTTP requests for link validation |
 
 ---
 
@@ -124,6 +125,9 @@ pytest --headed
 
 ```
 books-ui-automation-moynul/
+├── .github/
+│   └── workflows/
+│       └── playwright.yml              # GitHub Actions CI/CD workflow
 ├── tests/
 │   ├── test_homepage.py                # Test Case 1: Homepage validation
 │   ├── test_random_book_navigation.py  # Test Case 2: Random book navigation
@@ -225,7 +229,63 @@ Raw JSON results are saved to `allure-results/`.
 allure serve allure-results
 ```
 
-> **Note:** The Allure CLI must be installed separately to view the interactive report. Raw results in `allure-results/` are not viewable directly in a browser.
+> **Note:** The Allure CLI must be installed separately to view the interactive report locally. The full Allure HTML report is also automatically published to GitHub Pages on every push to `main`.
+
+---
+
+## GitHub Actions Setup
+
+The CI/CD pipeline is defined in `.github/workflows/playwright.yml`.
+
+### Trigger Events
+
+The workflow runs automatically on:
+- Every push to `main` or `master`
+- Every pull request targeting `main` or `master`
+- Manually via the **Run workflow** button in the Actions tab (`workflow_dispatch`)
+
+### Pipeline Steps
+
+**`test` job:**
+1. Checkout repository
+2. Set up Python 3.12
+3. Install Python dependencies from `requirements.txt`
+4. Install Chromium browser and its system dependencies
+5. Create `test-results/` and `allure-results/` directories
+6. Run all tests — generates HTML report and raw Allure results (`continue-on-error: true` ensures the pipeline continues even if tests fail)
+7. Set up Java 17 (required by Allure CLI)
+8. Install Allure CLI 2.34.1
+9. Generate the full Allure HTML report from raw results
+10. Upload all reports (`test-results/`, `allure-results/`, `allure-report/`) as a single `automation-reports` artifact
+11. Upload `allure-report/` as a GitHub Pages artifact (push events only)
+
+**`deploy` job:**
+1. Deploys the Allure report to GitHub Pages (push events only)
+
+### Viewing Reports
+
+**Allure Report (GitHub Pages):**
+
+The live Allure report is published at:
+[https://200215-moynul-islam.github.io/books-ui-automation-moynul](https://200215-moynul-islam.github.io/books-ui-automation-moynul)
+
+**Downloadable Artifacts:**
+
+1. Go to your repository on GitHub
+2. Click the **Actions** tab
+3. Select the latest workflow run
+4. Scroll down to the **Artifacts** section
+5. Download `automation-reports`
+
+The archive contains `test-results/report.html` (open in any browser), raw `allure-results/`, and the full `allure-report/`.
+
+### GitHub Pages Setup
+
+To enable GitHub Pages for the Allure report:
+
+1. Go to your repository **Settings → Pages**
+2. Under **Source**, select **GitHub Actions**
+3. Push to `main` — the workflow will deploy the report automatically
 
 ---
 
